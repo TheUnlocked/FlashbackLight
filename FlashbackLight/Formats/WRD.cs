@@ -15,6 +15,10 @@ namespace FlashbackLight.Formats
         public List<WRDCmd> Code;
         private bool externalStrings;
 
+        public byte[] bytes; // TEMP CODE
+
+        public string filename;
+
         public WRD()
         {
 
@@ -22,6 +26,10 @@ namespace FlashbackLight.Formats
 
         public WRD(byte[] bytes, string spcName, string wrdName)
         {
+            this.bytes = bytes; // TEMP CODE
+
+            this.filename = spcName + "::" + wrdName;
+
             BinaryReader reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8);
 
             ushort stringCount = reader.ReadUInt16();
@@ -36,15 +44,27 @@ namespace FlashbackLight.Formats
             uint paramsPointer = reader.ReadUInt32();
             uint stringsPointer = reader.ReadUInt32();
 
+            Labels = new List<string>();
+            reader.BaseStream.Seek(labelNamesPointer, SeekOrigin.Begin);
+            for (ushort i = 0; i < labelCount; ++i)
+            {
+                reader.ReadByte(); // CHECK
+                Labels.Add(reader.ReadString());
+                reader.ReadByte();  // Skip null terminator
+            }
+
+            reader.BaseStream.Seek(0x20, SeekOrigin.Begin);
             Code = new List<WRDCmd>();
             // We need at least 2 bytes for each command
             while (reader.BaseStream.Position + 1 < sublabelOffsetsPointer)
             {
                 byte b = reader.ReadByte();
-                if (b != 0x70) throw new InvalidDataException(string.Format("Error parsing WRD file: Expected opcode header byte 0x70, but got {0}", b));
+                if (b != 0x70) throw new InvalidDataException($"Error parsing WRD file at ${reader.BaseStream.Position}: Expected opcode header byte 0x70, but got {b}");
 
-                WRDCmd cmd = new WRDCmd();
-                cmd.Opcode = reader.ReadByte();
+                WRDCmd cmd = new WRDCmd
+                {
+                    Opcode = reader.ReadByte()
+                };
 
                 // Read command arguments, if any
                 List<ushort> argList = new List<ushort>();
@@ -61,20 +81,17 @@ namespace FlashbackLight.Formats
                 }
                 cmd.ArgData = argList.ToArray();
 
-                Code.Add(cmd);
-            }
+                if (cmd.ArgTypes.Length != cmd.ArgData.Length && cmd.Opcode != 0x01 && cmd.Opcode != 0x03)
+                {
+                    throw new InvalidDataException($"Error parsing WRD file: Opcode {cmd.Opcode} expected {cmd.ArgTypes.Length} arguments, but found {cmd.ArgData.Length}.");
+                }
 
-            Labels = new List<string>();
-            reader.BaseStream.Seek(labelNamesPointer, SeekOrigin.Begin);
-            for (ushort l = 0; l < labelCount; l++)
-            {
-                Labels.Add(reader.ReadString());
-                reader.ReadByte();  // Skip null terminator
+                Code.Add(cmd);
             }
 
             Params = new List<string>();
             reader.BaseStream.Seek(paramsPointer, SeekOrigin.Begin);
-            for (ushort p = 0; p < paramCount; p++)
+            for (ushort p = 0; p < paramCount; ++p)
             {
                 Params.Add(reader.ReadString());
                 reader.ReadByte();  // Skip null terminator
@@ -162,9 +179,92 @@ namespace FlashbackLight.Formats
 
         public override byte[] ToBytes()
         {
+
             List<byte> result = new List<byte>();
 
+            result.AddRange(BitConverter.GetBytes((ushort)Strings.Count));
+            result.AddRange(BitConverter.GetBytes((ushort)Labels.Count));
+            result.AddRange(BitConverter.GetBytes((ushort)Params.Count));
+            result.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 
+            List<byte> codeData = new List<byte>();
+            List<byte> codeOffsets = new List<byte>();
+            List<byte> labelNamesData = new List<byte>();
+            List<ushort> sublabelOffsets = new List<ushort>();
+
+            foreach(string label in Labels)
+            {
+                byte[] labelData = Encoding.UTF8.GetBytes(label);
+                labelNamesData.Add((byte)(labelData.Length - 1));
+                labelNamesData.AddRange(labelData);
+
+                codeOffsets.AddRange(BitConverter.GetBytes((ushort)codeData.Count));
+            }
+
+            foreach(WRDCmd cmd in Code)
+            {
+                // Re-calculate sublabel offsets
+                if (cmd.Opcode == 0x4A) // LBN
+                {
+                    // The current data size value is also equal to the current opcode's location.
+                    sublabelOffsets.Add((ushort)codeData.Count);
+                }
+
+                codeData.Add(0x70);
+                codeData.Add(cmd.Opcode);
+                foreach(ushort arg in cmd.ArgData)
+                {
+                    codeData.AddRange(BitConverter.GetBytes(arg));
+                }
+            }
+
+            result.AddRange(BitConverter.GetBytes((ushort)sublabelOffsets.Count));
+
+            List<byte> sublabelOffsetBytes = new List<byte>();
+            for (ushort i = 0; i < sublabelOffsets.Count; ++i)
+            {
+                sublabelOffsetBytes.AddRange(BitConverter.GetBytes(i));                         // sublabel number
+                sublabelOffsetBytes.AddRange(BitConverter.GetBytes(sublabelOffsetBytes[i]));    // sublabel offset
+            }
+
+            List<byte> flagsData = new List<byte>();
+            foreach(string flag in Params)
+            {
+                byte[] flagData = Encoding.UTF8.GetBytes(flag);
+                flagsData.Add((byte)(flagData.Length - 1));
+                flagsData.AddRange(flagData);
+            }
+
+            const uint HEADER_END = 0x20;
+            uint sublabelOffsetsPtr = HEADER_END + (uint)codeData.Count;
+            uint codeOffsetsPtr = sublabelOffsetsPtr + (uint)sublabelOffsetBytes.Count;
+            uint labelNamesPtr = codeOffsetsPtr + (uint)codeOffsets.Count;
+            uint flagsPtr = labelNamesPtr + (uint)labelNamesData.Count;
+            uint strPtr = !externalStrings ? flagsPtr + (uint)flagsData.Count : 0;
+
+            result.AddRange(BitConverter.GetBytes(sublabelOffsetsPtr));
+            result.AddRange(BitConverter.GetBytes(codeOffsetsPtr));
+            result.AddRange(BitConverter.GetBytes(labelNamesPtr));
+            result.AddRange(BitConverter.GetBytes(flagsPtr));
+            result.AddRange(BitConverter.GetBytes(strPtr));
+
+            // Now that the offsets/ptrs to the data have been calculated, append the actual data
+            result.AddRange(codeData);
+            result.AddRange(sublabelOffsetBytes);
+            result.AddRange(codeOffsets);
+            result.AddRange(labelNamesData);
+            result.AddRange(flagsData);
+            if (!externalStrings)
+            {
+                foreach(string str in Strings)
+                {
+                    byte[] strData = Encoding.UTF8.GetBytes(str);
+                    result.Add((byte)(strData.Length - 1));
+                    result.AddRange(strData);
+                }
+            }
+
+            result.Add(0x00);
 
             return result.ToArray();
         }

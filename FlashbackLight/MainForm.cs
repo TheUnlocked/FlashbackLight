@@ -25,7 +25,7 @@ namespace FlashbackLight
             InitializeComponent();
         }
 
-        private void openDataEntry(string entryName)
+        private void OpenDataEntry(string entryName)
         {
             currentFile = ("", null);
 
@@ -64,10 +64,10 @@ namespace FlashbackLight
                         break;
                 }
             }
-            displayCurrentFile();
+            DisplayCurrentFile();
         }
 
-        private void displayCurrentFile()
+        private void DisplayCurrentFile()
         {
             wrdViewer.Visible = false;
             stxViewer.Visible = false;
@@ -76,19 +76,23 @@ namespace FlashbackLight
             {
                 case WRD stx:
                     wrdViewer.Visible = true;
-                    refreshWRDCommandList(stx);
+                    RefreshWRDCommandList(stx);
                     break;
                 case STX stx:
                     stxViewer.Visible = true;
-                    refreshSTXStringList(stx);
+                    RefreshSTXStringList(stx);
                     break;
                 default:
                     break;
             }
         }
 
-        private void refreshWRDCommandList(WRD wrd)
+        private void RefreshWRDCommandList(WRD wrd)
         {
+            currentWRDHexEditor.ByteProvider = new Be.Windows.Forms.DynamicByteProvider(wrd.bytes
+                .Concat(Encoding.UTF8.GetBytes("### TOBYTES: ###"))
+                .Concat(wrd.ToBytes())
+                .ToArray());
             currentWRDCommandList.Items.Clear();
             foreach (WRDCmd cmd in wrd.Code)
             {
@@ -140,12 +144,12 @@ namespace FlashbackLight
             }
         }
 
-        private void refreshSTXStringList(STX stx)
+        private void RefreshSTXStringList(STX stx)
         {
             currentSTXStringList.DataSource = stx.Strings;
         }
 
-        private void showOpenErrorBox(Exception error, string filepath)
+        private void ShowOpenErrorBox(Exception error, string filepath)
         {
             if (MessageBox.Show($"Failed to open {filepath}: \n\n{error.Message}\n\n{error.StackTrace}\n\nWould you like to copy this error to your clipboard?",
                                     $"{Path.GetExtension(filepath)} Open Error: {error.Message}",
@@ -157,7 +161,7 @@ namespace FlashbackLight
             }
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog fd = new OpenFileDialog();
             fd.ShowDialog();
@@ -186,7 +190,7 @@ namespace FlashbackLight
                 }
                 catch (Exception error)
                 {
-                    showOpenErrorBox(error, filepath);
+                    ShowOpenErrorBox(error, filepath);
                     return;
                 }
             }
@@ -198,7 +202,7 @@ namespace FlashbackLight
             }
         }
 
-        private void currentSPCEntryList_DoubleClick(object sender, EventArgs e)
+        private void CurrentSPCEntryList_DoubleClick(object sender, EventArgs e)
         {
             if (currentSPC == null)
                 return;
@@ -207,13 +211,18 @@ namespace FlashbackLight
             try
             {
                 if (currentFile.filename != entryFilename)
-                    openDataEntry(entryFilename);
+                    OpenDataEntry(entryFilename);
             }
             catch (Exception error)
             {
-                showOpenErrorBox(error, entryFilename);
+                ShowOpenErrorBox(error, entryFilename);
                 return;
             }
+        }
+
+        private void CurrentSTXStringList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

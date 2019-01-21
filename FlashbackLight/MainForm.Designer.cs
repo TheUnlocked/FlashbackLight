@@ -34,7 +34,8 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.wrdViewer = new System.Windows.Forms.GroupBox();
+            this.wrdViewer = new System.Windows.Forms.TabControl();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.panel1 = new System.Windows.Forms.Panel();
             this.cmdMoveDown = new System.Windows.Forms.Button();
@@ -49,6 +50,8 @@
             this.argCountBox = new System.Windows.Forms.NumericUpDown();
             this.opcodeComboBox = new System.Windows.Forms.ComboBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.currentWRDHexEditor = new Be.Windows.Forms.HexBox();
             this.stxViewer = new System.Windows.Forms.GroupBox();
             this.currentSTXStringList = new System.Windows.Forms.ListBox();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -63,6 +66,7 @@
             this.splitContainer1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.wrdViewer.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
@@ -74,6 +78,7 @@
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.argCountBox)).BeginInit();
+            this.tabPage2.SuspendLayout();
             this.stxViewer.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -88,7 +93,7 @@
             this.currentSPCEntryList.Name = "currentSPCEntryList";
             this.currentSPCEntryList.Size = new System.Drawing.Size(200, 418);
             this.currentSPCEntryList.TabIndex = 0;
-            this.currentSPCEntryList.DoubleClick += new System.EventHandler(this.currentSPCEntryList_DoubleClick);
+            this.currentSPCEntryList.DoubleClick += new System.EventHandler(this.CurrentSPCEntryList_DoubleClick);
             // 
             // menuStrip1
             // 
@@ -96,7 +101,7 @@
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(684, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(752, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -113,7 +118,7 @@
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
             this.openToolStripMenuItem.Text = "Open";
-            this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
+            this.openToolStripMenuItem.Click += new System.EventHandler(this.OpenToolStripMenuItem_Click);
             // 
             // splitContainer1
             // 
@@ -129,9 +134,9 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.stxViewer);
             this.splitContainer1.Panel2.Controls.Add(this.wrdViewer);
-            this.splitContainer1.Size = new System.Drawing.Size(684, 437);
+            this.splitContainer1.Panel2.Controls.Add(this.stxViewer);
+            this.splitContainer1.Size = new System.Drawing.Size(752, 437);
             this.splitContainer1.SplitterDistance = 206;
             this.splitContainer1.TabIndex = 2;
             // 
@@ -148,20 +153,31 @@
             // 
             // wrdViewer
             // 
-            this.wrdViewer.Controls.Add(this.splitContainer2);
+            this.wrdViewer.Controls.Add(this.tabPage1);
+            this.wrdViewer.Controls.Add(this.tabPage2);
             this.wrdViewer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.wrdViewer.Location = new System.Drawing.Point(0, 0);
             this.wrdViewer.Name = "wrdViewer";
-            this.wrdViewer.Size = new System.Drawing.Size(474, 437);
-            this.wrdViewer.TabIndex = 1;
-            this.wrdViewer.TabStop = false;
-            this.wrdViewer.Text = "Script Viewer";
+            this.wrdViewer.SelectedIndex = 0;
+            this.wrdViewer.Size = new System.Drawing.Size(542, 437);
+            this.wrdViewer.TabIndex = 3;
             this.wrdViewer.Visible = false;
+            // 
+            // tabPage1
+            // 
+            this.tabPage1.Controls.Add(this.splitContainer2);
+            this.tabPage1.Location = new System.Drawing.Point(4, 22);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(635, 445);
+            this.tabPage1.TabIndex = 0;
+            this.tabPage1.Text = "Script Editor";
+            this.tabPage1.UseVisualStyleBackColor = true;
             // 
             // splitContainer2
             // 
             this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.Location = new System.Drawing.Point(3, 16);
+            this.splitContainer2.Location = new System.Drawing.Point(3, 3);
             this.splitContainer2.MinimumSize = new System.Drawing.Size(418, 418);
             this.splitContainer2.Name = "splitContainer2";
             this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -174,8 +190,8 @@
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.groupBox3);
-            this.splitContainer2.Size = new System.Drawing.Size(468, 418);
-            this.splitContainer2.SplitterDistance = 251;
+            this.splitContainer2.Size = new System.Drawing.Size(629, 439);
+            this.splitContainer2.SplitterDistance = 263;
             this.splitContainer2.TabIndex = 0;
             // 
             // panel1
@@ -186,15 +202,15 @@
             this.panel1.Controls.Add(this.cmdMoveUp);
             this.panel1.Controls.Add(this.cmdDelete);
             this.panel1.Controls.Add(this.cmdAdd);
-            this.panel1.Location = new System.Drawing.Point(436, 3);
+            this.panel1.Location = new System.Drawing.Point(598, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(32, 248);
+            this.panel1.Size = new System.Drawing.Size(32, 256);
             this.panel1.TabIndex = 2;
             // 
             // cmdMoveDown
             // 
             this.cmdMoveDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdMoveDown.Location = new System.Drawing.Point(3, 218);
+            this.cmdMoveDown.Location = new System.Drawing.Point(3, 226);
             this.cmdMoveDown.Name = "cmdMoveDown";
             this.cmdMoveDown.Size = new System.Drawing.Size(26, 26);
             this.cmdMoveDown.TabIndex = 4;
@@ -204,7 +220,7 @@
             // cmdMoveUp
             // 
             this.cmdMoveUp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdMoveUp.Location = new System.Drawing.Point(3, 146);
+            this.cmdMoveUp.Location = new System.Drawing.Point(3, 154);
             this.cmdMoveUp.Name = "cmdMoveUp";
             this.cmdMoveUp.Size = new System.Drawing.Size(26, 26);
             this.cmdMoveUp.TabIndex = 3;
@@ -241,7 +257,7 @@
             this.currentWRDCommandList.ItemHeight = 16;
             this.currentWRDCommandList.Location = new System.Drawing.Point(0, 0);
             this.currentWRDCommandList.Name = "currentWRDCommandList";
-            this.currentWRDCommandList.Size = new System.Drawing.Size(430, 228);
+            this.currentWRDCommandList.Size = new System.Drawing.Size(598, 244);
             this.currentWRDCommandList.TabIndex = 0;
             // 
             // groupBox3
@@ -250,7 +266,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Location = new System.Drawing.Point(0, 0);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(468, 163);
+            this.groupBox3.Size = new System.Drawing.Size(629, 172);
             this.groupBox3.TabIndex = 0;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Command Editor";
@@ -274,7 +290,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.groupBox4);
-            this.splitContainer3.Size = new System.Drawing.Size(462, 144);
+            this.splitContainer3.Size = new System.Drawing.Size(623, 153);
             this.splitContainer3.SplitterDistance = 26;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -282,7 +298,7 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(290, 5);
+            this.label2.Location = new System.Drawing.Point(507, 5);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(86, 13);
             this.label2.TabIndex = 3;
@@ -300,7 +316,7 @@
             // argCountBox
             // 
             this.argCountBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.argCountBox.Location = new System.Drawing.Point(410, 3);
+            this.argCountBox.Location = new System.Drawing.Point(627, 3);
             this.argCountBox.Name = "argCountBox";
             this.argCountBox.Size = new System.Drawing.Size(49, 20);
             this.argCountBox.TabIndex = 1;
@@ -319,10 +335,35 @@
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox4.Location = new System.Drawing.Point(0, 0);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(462, 114);
+            this.groupBox4.Size = new System.Drawing.Size(623, 123);
             this.groupBox4.TabIndex = 0;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Arguments";
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.currentWRDHexEditor);
+            this.tabPage2.Location = new System.Drawing.Point(4, 22);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(534, 411);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "Hex Editor";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // currentWRDHexEditor
+            // 
+            this.currentWRDHexEditor.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.currentWRDHexEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.currentWRDHexEditor.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.currentWRDHexEditor.LineInfoVisible = true;
+            this.currentWRDHexEditor.Location = new System.Drawing.Point(3, 3);
+            this.currentWRDHexEditor.Name = "currentWRDHexEditor";
+            this.currentWRDHexEditor.ShadowSelectionColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(60)))), ((int)(((byte)(188)))), ((int)(((byte)(255)))));
+            this.currentWRDHexEditor.Size = new System.Drawing.Size(528, 405);
+            this.currentWRDHexEditor.StringViewVisible = true;
+            this.currentWRDHexEditor.TabIndex = 0;
+            this.currentWRDHexEditor.VScrollBarVisible = true;
             // 
             // stxViewer
             // 
@@ -331,7 +372,7 @@
             this.stxViewer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.stxViewer.Location = new System.Drawing.Point(0, 0);
             this.stxViewer.Name = "stxViewer";
-            this.stxViewer.Size = new System.Drawing.Size(474, 437);
+            this.stxViewer.Size = new System.Drawing.Size(542, 437);
             this.stxViewer.TabIndex = 2;
             this.stxViewer.TabStop = false;
             this.stxViewer.Text = "String Viewer";
@@ -346,6 +387,7 @@
             this.currentSTXStringList.Name = "currentSTXStringList";
             this.currentSTXStringList.Size = new System.Drawing.Size(430, 404);
             this.currentSTXStringList.TabIndex = 0;
+            this.currentSTXStringList.SelectedIndexChanged += new System.EventHandler(this.CurrentSTXStringList_SelectedIndexChanged);
             // 
             // panel2
             // 
@@ -355,7 +397,7 @@
             this.panel2.Controls.Add(this.button2);
             this.panel2.Controls.Add(this.button3);
             this.panel2.Controls.Add(this.button4);
-            this.panel2.Location = new System.Drawing.Point(439, 16);
+            this.panel2.Location = new System.Drawing.Point(507, 16);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(32, 418);
             this.panel2.TabIndex = 2;
@@ -404,7 +446,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(684, 461);
+            this.ClientSize = new System.Drawing.Size(752, 461);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
@@ -419,6 +461,7 @@
             this.splitContainer1.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.wrdViewer.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
@@ -431,6 +474,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.argCountBox)).EndInit();
+            this.tabPage2.ResumeLayout(false);
             this.stxViewer.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -448,7 +492,6 @@
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.ListBox currentWRDCommandList;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.GroupBox wrdViewer;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.SplitContainer splitContainer3;
         private System.Windows.Forms.ComboBox opcodeComboBox;
@@ -468,6 +511,10 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.ListBox currentSTXStringList;
+        private System.Windows.Forms.TabControl wrdViewer;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TabPage tabPage2;
+        private Be.Windows.Forms.HexBox currentWRDHexEditor;
     }
 }
 
