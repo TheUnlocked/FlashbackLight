@@ -89,10 +89,10 @@ namespace FlashbackLight
 
         private void RefreshWRDCommandList(WRD wrd)
         {
-            currentWRDHexEditor.ByteProvider = new Be.Windows.Forms.DynamicByteProvider(wrd.bytes
-                .Concat(Encoding.UTF8.GetBytes("### TOBYTES: ###"))
-                .Concat(wrd.ToBytes())
-                .ToArray());
+            currentWRDHexEditor.ByteProvider = new Be.Windows.Forms.DynamicByteProvider(wrd.bytes);
+            //.Concat(Encoding.UTF8.GetBytes("### TOBYTES: ###"))
+            //.Concat(wrd.ToBytes())
+            //.ToArray());
             currentWRDCommandList.Items.Clear();
             foreach (WRDCmd cmd in wrd.Code)
             {

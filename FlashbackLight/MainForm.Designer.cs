@@ -169,7 +169,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(635, 445);
+            this.tabPage1.Size = new System.Drawing.Size(534, 411);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Script Editor";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -190,8 +190,8 @@
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.groupBox3);
-            this.splitContainer2.Size = new System.Drawing.Size(629, 439);
-            this.splitContainer2.SplitterDistance = 263;
+            this.splitContainer2.Size = new System.Drawing.Size(528, 418);
+            this.splitContainer2.SplitterDistance = 251;
             this.splitContainer2.TabIndex = 0;
             // 
             // panel1
@@ -202,15 +202,15 @@
             this.panel1.Controls.Add(this.cmdMoveUp);
             this.panel1.Controls.Add(this.cmdDelete);
             this.panel1.Controls.Add(this.cmdAdd);
-            this.panel1.Location = new System.Drawing.Point(598, 0);
+            this.panel1.Location = new System.Drawing.Point(497, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(32, 256);
+            this.panel1.Size = new System.Drawing.Size(32, 244);
             this.panel1.TabIndex = 2;
             // 
             // cmdMoveDown
             // 
             this.cmdMoveDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdMoveDown.Location = new System.Drawing.Point(3, 226);
+            this.cmdMoveDown.Location = new System.Drawing.Point(3, 214);
             this.cmdMoveDown.Name = "cmdMoveDown";
             this.cmdMoveDown.Size = new System.Drawing.Size(26, 26);
             this.cmdMoveDown.TabIndex = 4;
@@ -220,7 +220,7 @@
             // cmdMoveUp
             // 
             this.cmdMoveUp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdMoveUp.Location = new System.Drawing.Point(3, 154);
+            this.cmdMoveUp.Location = new System.Drawing.Point(3, 142);
             this.cmdMoveUp.Name = "cmdMoveUp";
             this.cmdMoveUp.Size = new System.Drawing.Size(26, 26);
             this.cmdMoveUp.TabIndex = 3;
@@ -257,7 +257,7 @@
             this.currentWRDCommandList.ItemHeight = 16;
             this.currentWRDCommandList.Location = new System.Drawing.Point(0, 0);
             this.currentWRDCommandList.Name = "currentWRDCommandList";
-            this.currentWRDCommandList.Size = new System.Drawing.Size(598, 244);
+            this.currentWRDCommandList.Size = new System.Drawing.Size(497, 244);
             this.currentWRDCommandList.TabIndex = 0;
             // 
             // groupBox3
@@ -266,7 +266,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Location = new System.Drawing.Point(0, 0);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(629, 172);
+            this.groupBox3.Size = new System.Drawing.Size(528, 163);
             this.groupBox3.TabIndex = 0;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Command Editor";
@@ -290,7 +290,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.groupBox4);
-            this.splitContainer3.Size = new System.Drawing.Size(623, 153);
+            this.splitContainer3.Size = new System.Drawing.Size(522, 144);
             this.splitContainer3.SplitterDistance = 26;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -298,7 +298,7 @@
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(507, 5);
+            this.label2.Location = new System.Drawing.Point(406, 5);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(86, 13);
             this.label2.TabIndex = 3;
@@ -316,7 +316,7 @@
             // argCountBox
             // 
             this.argCountBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.argCountBox.Location = new System.Drawing.Point(627, 3);
+            this.argCountBox.Location = new System.Drawing.Point(526, 3);
             this.argCountBox.Name = "argCountBox";
             this.argCountBox.Size = new System.Drawing.Size(49, 20);
             this.argCountBox.TabIndex = 1;
@@ -335,7 +335,7 @@
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox4.Location = new System.Drawing.Point(0, 0);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(623, 123);
+            this.groupBox4.Size = new System.Drawing.Size(522, 114);
             this.groupBox4.TabIndex = 0;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Arguments";
