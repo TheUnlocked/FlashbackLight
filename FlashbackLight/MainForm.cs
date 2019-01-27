@@ -17,7 +17,7 @@ namespace FlashbackLight
         public static string RegionString = "US";
         private static string currentSPCFilename;
         private static SPC currentSPC;
-        private static (string filename, V3Format data) currentFile;
+        private static (string filename, V3Format data) currentFile = ("", null);
 
 
         public MainForm()
@@ -27,14 +27,15 @@ namespace FlashbackLight
 
         private void OpenDataEntry(string entryName)
         {
+            if (currentFile.data != null)
+            {
+                SaveOpenFile();
+            }
             currentFile = ("", null);
 
             if (currentSPC.Entries.TryGetValue(entryName, out var entry))
             {
-                // Convert the entry data into the appropriate format, based on file extension
-                // TODO: This is REALLY SLOW, see if we can speed it up
-
-                // Change: We don't need to decode every file within an SPC whenever we open one of them
+                byte[] data = entry.Contents;
 
                 string ext = Path.GetExtension(entry.Filename).ToUpper();
 
@@ -53,11 +54,11 @@ namespace FlashbackLight
                     //    break;
 
                     case ".STX":
-                        currentFile = (entryName, new STX(entry.Contents));
+                        currentFile = (entryName, new STX(entry));
                         break;
 
                     case ".WRD":
-                        currentFile = (entryName, new WRD(entry.Contents, currentSPCFilename, entryName));
+                        currentFile = (entryName, new WRD(entry, currentSPCFilename, entryName));
                         break;
 
                     default:
@@ -71,6 +72,9 @@ namespace FlashbackLight
         {
             wrdViewer.Visible = false;
             stxViewer.Visible = false;
+
+            if (currentFile.data == null)
+                return;
 
             switch (currentFile.data)
             {
@@ -89,10 +93,7 @@ namespace FlashbackLight
 
         private void RefreshWRDCommandList(WRD wrd)
         {
-            currentWRDHexEditor.ByteProvider = new Be.Windows.Forms.DynamicByteProvider(wrd.bytes);
-            //.Concat(Encoding.UTF8.GetBytes("### TOBYTES: ###"))
-            //.Concat(wrd.ToBytes())
-            //.ToArray());
+            currentWRDHexEditor.ByteProvider = new Be.Windows.Forms.DynamicByteProvider(wrd.entry.Contents);
             currentWRDCommandList.Items.Clear();
             foreach (WRDCmd cmd in wrd.Code)
             {
@@ -146,7 +147,10 @@ namespace FlashbackLight
 
         private void RefreshSTXStringList(STX stx)
         {
-            currentSTXStringList.DataSource = stx.Strings;
+            currentSTXStringList.DataSource = new BindingSource()
+            {
+                DataSource = new Utils.DataGridViewList<string>(stx.Strings)
+            };
         }
 
         private void ShowOpenErrorBox(Exception error, string filepath)
@@ -196,10 +200,14 @@ namespace FlashbackLight
             }
 
             currentSPCEntryList.Items.Clear();
+            currentFile = ("", null);
+            DisplayCurrentFile();
             foreach (string entryName in currentSPC.Entries.Keys)
             {
                 currentSPCEntryList.Items.Add(entryName);
             }
+            saveToolStripMenuItem.Enabled = true;
+            saveAsToolStripMenuItem.Enabled = true;
         }
 
         private void CurrentSPCEntryList_DoubleClick(object sender, EventArgs e)
@@ -210,8 +218,7 @@ namespace FlashbackLight
             string entryFilename = currentSPC.Entries.Keys.ToArray()[currentSPCEntryList.SelectedIndex];
             try
             {
-                if (currentFile.filename != entryFilename)
-                    OpenDataEntry(entryFilename);
+                OpenDataEntry(entryFilename);
             }
             catch (Exception error)
             {
@@ -220,9 +227,60 @@ namespace FlashbackLight
             }
         }
 
-        private void CurrentSTXStringList_SelectedIndexChanged(object sender, EventArgs e)
+        private void Save(object sender, EventArgs e)
         {
+            if (!File.Exists(currentSPCFilename))
+            {
+                SaveAs(sender, e);
+                return;
+            }
+            SaveOpenFile();
+            File.WriteAllBytes(currentSPCFilename, currentSPC.ToBytes());
+        }
 
+        private void SaveAs(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog
+            {
+                AddExtension = true,
+                DefaultExt = ".spc"
+            };
+            dialog.ShowDialog();
+            if (dialog.FileName == "")
+                return;
+            SaveOpenFile();
+            Directory.CreateDirectory(Path.GetPathRoot(dialog.FileName));
+            File.WriteAllBytes(dialog.FileName, currentSPC.ToBytes());
+            currentSPCFilename = dialog.FileName;
+        }
+
+        private void currentSTXStringList_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            if (currentFile.data is STX)
+            {
+                SaveSTX();
+            }
+        }
+
+        private void currentSTXStringList_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
+            => SaveSTX();
+
+        private void currentSTXStringList_UserAddedRow(object sender, DataGridViewRowEventArgs e)
+            => SaveSTX();
+
+        private void SaveSTX()
+        {
+            Utils.DataGridViewList<string> list = (Utils.DataGridViewList<string>)((BindingSource)currentSTXStringList.DataSource).DataSource;
+            list.PushData();
+        }
+
+        private void SaveOpenFile()
+        {
+            if (currentFile.data != null)
+            {
+                currentFile.data.UpdateSPCEntry();
+                currentFile.data.Recompress();
+            }
         }
     }
 }

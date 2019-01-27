@@ -28,12 +28,18 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.currentSPCEntryList = new System.Windows.Forms.ListBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.stxViewer = new System.Windows.Forms.GroupBox();
+            this.currentSTXStringList = new System.Windows.Forms.DataGridView();
+            this.Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.wrdViewer = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
@@ -52,19 +58,14 @@
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.currentWRDHexEditor = new Be.Windows.Forms.HexBox();
-            this.stxViewer = new System.Windows.Forms.GroupBox();
-            this.currentSTXStringList = new System.Windows.Forms.ListBox();
-            this.panel2 = new System.Windows.Forms.Panel();
-            this.button1 = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.stxViewer.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.currentSTXStringList)).BeginInit();
             this.wrdViewer.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
@@ -79,8 +80,6 @@
             this.splitContainer3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.argCountBox)).BeginInit();
             this.tabPage2.SuspendLayout();
-            this.stxViewer.SuspendLayout();
-            this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // currentSPCEntryList
@@ -108,7 +107,9 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.openToolStripMenuItem});
+            this.openToolStripMenuItem,
+            this.saveToolStripMenuItem,
+            this.saveAsToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -116,9 +117,29 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
-            this.openToolStripMenuItem.Text = "Open";
+            this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.openToolStripMenuItem.Text = "Open...";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.OpenToolStripMenuItem_Click);
+            // 
+            // saveToolStripMenuItem
+            // 
+            this.saveToolStripMenuItem.Enabled = false;
+            this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+            this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.saveToolStripMenuItem.Text = "Save";
+            this.saveToolStripMenuItem.Click += new System.EventHandler(this.Save);
+            // 
+            // saveAsToolStripMenuItem
+            // 
+            this.saveAsToolStripMenuItem.Enabled = false;
+            this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
+            this.saveAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
+            | System.Windows.Forms.Keys.S)));
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
+            this.saveAsToolStripMenuItem.Text = "Save As...";
+            this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.SaveAs);
             // 
             // splitContainer1
             // 
@@ -134,8 +155,8 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.wrdViewer);
             this.splitContainer1.Panel2.Controls.Add(this.stxViewer);
+            this.splitContainer1.Panel2.Controls.Add(this.wrdViewer);
             this.splitContainer1.Size = new System.Drawing.Size(752, 437);
             this.splitContainer1.SplitterDistance = 206;
             this.splitContainer1.TabIndex = 2;
@@ -150,6 +171,53 @@
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "SPC Browser";
+            // 
+            // stxViewer
+            // 
+            this.stxViewer.Controls.Add(this.currentSTXStringList);
+            this.stxViewer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.stxViewer.Location = new System.Drawing.Point(0, 0);
+            this.stxViewer.Name = "stxViewer";
+            this.stxViewer.Size = new System.Drawing.Size(542, 437);
+            this.stxViewer.TabIndex = 2;
+            this.stxViewer.TabStop = false;
+            this.stxViewer.Text = "String Viewer";
+            this.stxViewer.Visible = false;
+            // 
+            // currentSTXStringList
+            // 
+            this.currentSTXStringList.AllowUserToResizeColumns = false;
+            this.currentSTXStringList.AllowUserToResizeRows = false;
+            this.currentSTXStringList.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
+            this.currentSTXStringList.BackgroundColor = System.Drawing.SystemColors.Window;
+            this.currentSTXStringList.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            this.currentSTXStringList.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            this.currentSTXStringList.ColumnHeadersVisible = false;
+            this.currentSTXStringList.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Value});
+            this.currentSTXStringList.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.currentSTXStringList.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.currentSTXStringList.Location = new System.Drawing.Point(3, 16);
+            this.currentSTXStringList.Name = "currentSTXStringList";
+            this.currentSTXStringList.RowHeadersVisible = false;
+            this.currentSTXStringList.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.currentSTXStringList.RowsDefaultCellStyle = dataGridViewCellStyle2;
+            this.currentSTXStringList.RowTemplate.Height = 16;
+            this.currentSTXStringList.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.currentSTXStringList.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.currentSTXStringList.Size = new System.Drawing.Size(536, 418);
+            this.currentSTXStringList.TabIndex = 0;
+            this.currentSTXStringList.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.currentSTXStringList_CellValueChanged);
+            this.currentSTXStringList.UserAddedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.currentSTXStringList_UserAddedRow);
+            this.currentSTXStringList.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.currentSTXStringList_UserDeletedRow);
+            // 
+            // Value
+            // 
+            this.Value.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.Value.DataPropertyName = "Value";
+            this.Value.HeaderText = "Value";
+            this.Value.Name = "Value";
             // 
             // wrdViewer
             // 
@@ -365,83 +433,6 @@
             this.currentWRDHexEditor.TabIndex = 0;
             this.currentWRDHexEditor.VScrollBarVisible = true;
             // 
-            // stxViewer
-            // 
-            this.stxViewer.Controls.Add(this.currentSTXStringList);
-            this.stxViewer.Controls.Add(this.panel2);
-            this.stxViewer.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.stxViewer.Location = new System.Drawing.Point(0, 0);
-            this.stxViewer.Name = "stxViewer";
-            this.stxViewer.Size = new System.Drawing.Size(542, 437);
-            this.stxViewer.TabIndex = 2;
-            this.stxViewer.TabStop = false;
-            this.stxViewer.Text = "String Viewer";
-            this.stxViewer.Visible = false;
-            // 
-            // currentSTXStringList
-            // 
-            this.currentSTXStringList.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.currentSTXStringList.FormattingEnabled = true;
-            this.currentSTXStringList.ItemHeight = 16;
-            this.currentSTXStringList.Location = new System.Drawing.Point(6, 16);
-            this.currentSTXStringList.Name = "currentSTXStringList";
-            this.currentSTXStringList.Size = new System.Drawing.Size(430, 404);
-            this.currentSTXStringList.TabIndex = 0;
-            this.currentSTXStringList.SelectedIndexChanged += new System.EventHandler(this.CurrentSTXStringList_SelectedIndexChanged);
-            // 
-            // panel2
-            // 
-            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.panel2.Controls.Add(this.button1);
-            this.panel2.Controls.Add(this.button2);
-            this.panel2.Controls.Add(this.button3);
-            this.panel2.Controls.Add(this.button4);
-            this.panel2.Location = new System.Drawing.Point(507, 16);
-            this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(32, 418);
-            this.panel2.TabIndex = 2;
-            // 
-            // button1
-            // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(3, 388);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(26, 26);
-            this.button1.TabIndex = 4;
-            this.button1.Text = "↓";
-            this.button1.UseVisualStyleBackColor = true;
-            // 
-            // button2
-            // 
-            this.button2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button2.Location = new System.Drawing.Point(3, 316);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(26, 26);
-            this.button2.TabIndex = 3;
-            this.button2.Text = "↑";
-            this.button2.UseVisualStyleBackColor = true;
-            // 
-            // button3
-            // 
-            this.button3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button3.Location = new System.Drawing.Point(3, 75);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(26, 26);
-            this.button3.TabIndex = 2;
-            this.button3.Text = "-";
-            this.button3.UseVisualStyleBackColor = true;
-            // 
-            // button4
-            // 
-            this.button4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button4.Location = new System.Drawing.Point(3, 3);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(26, 26);
-            this.button4.TabIndex = 1;
-            this.button4.Text = "+";
-            this.button4.UseVisualStyleBackColor = true;
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -460,6 +451,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
+            this.stxViewer.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.currentSTXStringList)).EndInit();
             this.wrdViewer.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.splitContainer2.Panel1.ResumeLayout(false);
@@ -475,8 +468,6 @@
             this.splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.argCountBox)).EndInit();
             this.tabPage2.ResumeLayout(false);
-            this.stxViewer.ResumeLayout(false);
-            this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -505,16 +496,14 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox stxViewer;
-        private System.Windows.Forms.Panel panel2;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button4;
-        private System.Windows.Forms.ListBox currentSTXStringList;
+        private System.Windows.Forms.DataGridView currentSTXStringList;
         private System.Windows.Forms.TabControl wrdViewer;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
         private Be.Windows.Forms.HexBox currentWRDHexEditor;
+        private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
     }
 }
 

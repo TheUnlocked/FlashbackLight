@@ -34,7 +34,7 @@ All opcodes are one byte.
 All args are two bytes, in big endian notation.  
 
 ## Branch Labels:
-### Associates numbers with code offsets for LBN opcodes.  
+### Associates numbers with code offsets for LBN (Label Branch Number) opcodes.  
 Format: `(number offset)*`  
 `number`: ushort  
 `offset`: ushort  

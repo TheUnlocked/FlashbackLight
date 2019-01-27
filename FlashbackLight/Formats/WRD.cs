@@ -14,173 +14,167 @@ namespace FlashbackLight.Formats
         public List<string> Strings;
         public List<WRDCmd> Code;
         private bool externalStrings;
+        public string spcName;
+        public string wrdName;
 
-        public byte[] bytes; // TEMP CODE
-
-        public string filename;
-
-        public WRD()
+        public WRD(SPCEntry entry, string spcName, string wrdName) : base(entry)
         {
-
+            this.spcName = spcName;
+            this.wrdName = wrdName;
+            Update();
         }
 
-        public WRD(byte[] bytes, string spcName, string wrdName)
+        public void Update()
         {
-            this.bytes = bytes; // TEMP CODE
-
-            this.filename = spcName + "::" + wrdName;
-
-            BinaryReader reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8);
-
-            ushort stringCount = reader.ReadUInt16();
-            ushort labelCount = reader.ReadUInt16();
-            ushort paramCount = reader.ReadUInt16();
-            ushort sublabelCount = reader.ReadUInt16();
-            reader.BaseStream.Seek(4, SeekOrigin.Current);
-
-            uint codeEndPtr = reader.ReadUInt32();
-            uint branchLabelsEndPtr = reader.ReadUInt32();
-            uint labelsEndPtr = reader.ReadUInt32();
-            uint paramsEndPointer = reader.ReadUInt32();
-            uint stringsEndPointer = reader.ReadUInt32();
-
-            Console.WriteLine(codeEndPtr);
-            Console.WriteLine(branchLabelsEndPtr);
-            Console.WriteLine(labelsEndPtr);
-            Console.WriteLine(paramsEndPointer);
-            Console.WriteLine(stringsEndPointer);
-
-            Labels = new List<string>();
-            reader.BaseStream.Seek(labelsEndPtr, SeekOrigin.Begin);
-            for (ushort i = 0; i < labelCount; ++i)
+            using (BinaryReader reader = new BinaryReader(new MemoryStream(entry.Contents), Encoding.UTF8))
             {
-                Labels.Add(reader.ReadString());
-                reader.ReadByte();  // Skip null terminator
-            }
 
-            reader.BaseStream.Seek(0x20, SeekOrigin.Begin);
-            Code = new List<WRDCmd>();
-            // We need at least 2 bytes for each command
-            while (reader.BaseStream.Position + 1 < codeEndPtr)
-            {
-                byte b = reader.ReadByte();
-                if (b != 0x70) throw new InvalidDataException($"Error parsing WRD file at ${reader.BaseStream.Position}: Expected opcode header byte 0x70, but got {b}");
+                ushort stringCount = reader.ReadUInt16();
+                ushort labelCount = reader.ReadUInt16();
+                ushort paramCount = reader.ReadUInt16();
+                ushort sublabelCount = reader.ReadUInt16();
+                reader.BaseStream.Seek(4, SeekOrigin.Current);
 
-                WRDCmd cmd = new WRDCmd
+                uint codeEndPtr = reader.ReadUInt32();
+                uint branchLabelsEndPtr = reader.ReadUInt32();
+                uint labelsEndPtr = reader.ReadUInt32();
+                uint paramsEndPointer = reader.ReadUInt32();
+                uint stringsEndPointer = reader.ReadUInt32();
+
+                Labels = new List<string>();
+                reader.BaseStream.Seek(labelsEndPtr, SeekOrigin.Begin);
+                for (ushort i = 0; i < labelCount; ++i)
                 {
-                    Opcode = reader.ReadByte()
-                };
+                    Labels.Add(reader.ReadString());
+                    reader.ReadByte();  // Skip null terminator
+                }
 
-                // Read command arguments, if any
-                List<ushort> argList = new List<ushort>();
+                reader.BaseStream.Seek(0x20, SeekOrigin.Begin);
+                Code = new List<WRDCmd>();
+                // We need at least 2 bytes for each command
                 while (reader.BaseStream.Position + 1 < codeEndPtr)
                 {
-                    byte[] arg = reader.ReadBytes(2);
-                    if (arg[0] == 0x70)
+                    byte b = reader.ReadByte();
+                    if (b != 0x70) throw new InvalidDataException($"Error parsing WRD file at ${reader.BaseStream.Position}: Expected opcode header byte 0x70, but got {b}");
+
+                    WRDCmd cmd = new WRDCmd
                     {
-                        reader.BaseStream.Seek(-2, SeekOrigin.Current);
-                        break;
+                        Opcode = reader.ReadByte()
+                    };
+
+                    // Read command arguments, if any
+                    List<ushort> argList = new List<ushort>();
+                    while (reader.BaseStream.Position + 1 < codeEndPtr)
+                    {
+                        byte[] arg = reader.ReadBytes(2);
+                        if (arg[0] == 0x70)
+                        {
+                            reader.BaseStream.Seek(-2, SeekOrigin.Current);
+                            break;
+                        }
+
+                        argList.Add(BitConverter.ToUInt16(arg.Reverse().ToArray(), 0));
+                    }
+                    cmd.ArgData = argList.ToArray();
+
+                    if (cmd.ArgTypes.Length != cmd.ArgData.Length && cmd.Opcode != 0x01 && cmd.Opcode != 0x03)
+                    {
+                        throw new InvalidDataException($"Error parsing WRD file: Opcode {cmd.Opcode} expected {cmd.ArgTypes.Length} arguments, but found {cmd.ArgData.Length}.");
                     }
 
-                    argList.Add(BitConverter.ToUInt16(arg.Reverse().ToArray(), 0));
-                }
-                cmd.ArgData = argList.ToArray();
-
-                if (cmd.ArgTypes.Length != cmd.ArgData.Length && cmd.Opcode != 0x01 && cmd.Opcode != 0x03)
-                {
-                    throw new InvalidDataException($"Error parsing WRD file: Opcode {cmd.Opcode} expected {cmd.ArgTypes.Length} arguments, but found {cmd.ArgData.Length}.");
+                    Code.Add(cmd);
                 }
 
-                Code.Add(cmd);
-            }
-
-            Params = new List<string>();
-            reader.BaseStream.Seek(paramsEndPointer, SeekOrigin.Begin);
-            for (ushort p = 0; p < paramCount; ++p)
-            {
-                Params.Add(reader.ReadString());
-                reader.ReadByte();  // Skip null terminator
-            }
-
-            externalStrings = (stringsEndPointer == 0);
-
-            // Read dialogue text strings
-            Strings = new List<string>();
-            if (stringCount > 0)
-            {
-                // If we already know that there are no strings,
-                // there's no need to go through the work to find them.
-
-                if (externalStrings)
+                Params = new List<string>();
+                reader.BaseStream.Seek(paramsEndPointer, SeekOrigin.Begin);
+                for (ushort p = 0; p < paramCount; ++p)
                 {
-                    // Strings are stored in the "(current spc name)_text_(region).spc" file,
-                    // within an STX file with the same name as the current WRD file.
-                    string textSPCName = textSPCName = spcName.Insert(spcName.LastIndexOf('.'), string.Format("_text_{0}", MainForm.RegionString));
-                    if (!File.Exists(textSPCName))
+                    Params.Add(reader.ReadString());
+                    reader.ReadByte();  // Skip null terminator
+                }
+
+                externalStrings = (stringsEndPointer == 0);
+
+                // Read dialogue text strings
+                Strings = new List<string>();
+                if (stringCount > 0)
+                {
+                    // If we already know that there are no strings,
+                    // there's no need to go through the work to find them.
+
+                    if (externalStrings)
                     {
-                        // If the first filename fails, we probably need to remove a duplicate
-                        // region tag from the filename before "_text_".
-                        textSPCName = textSPCName.Remove(textSPCName.LastIndexOf("_text_") - 3, 3);
-
+                        // Strings are stored in the "(current spc name)_text_(region).spc" file,
+                        // within an STX file with the same name as the current WRD file.
+                        string textSPCName = textSPCName = spcName.Insert(spcName.LastIndexOf('.'), string.Format("_text_{0}", MainForm.RegionString));
                         if (!File.Exists(textSPCName))
                         {
-                            // If the file still doesn't exist, it's probably not
-                            // there and the strings should just be abandoned.
-                            System.Windows.Forms.MessageBox.Show($"{spcName} does not have an associated .stx text file.",
-                                "Missing .stx file",
-                                System.Windows.Forms.MessageBoxButtons.OK,
-                                System.Windows.Forms.MessageBoxIcon.Warning,
-                                System.Windows.Forms.MessageBoxDefaultButton.Button1);
-                            return;
+                            // If the first filename fails, we probably need to remove a duplicate
+                            // region tag from the filename before "_text_".
+                            textSPCName = textSPCName.Remove(textSPCName.LastIndexOf("_text_") - 3, 3);
+
+                            if (!File.Exists(textSPCName))
+                            {
+                                // If the file still doesn't exist, it's probably not
+                                // there and the strings should just be abandoned.
+                                System.Windows.Forms.MessageBox.Show($"{spcName} does not have an associated .stx text file.",
+                                    "Missing .stx file",
+                                    System.Windows.Forms.MessageBoxButtons.OK,
+                                    System.Windows.Forms.MessageBoxIcon.Warning,
+                                    System.Windows.Forms.MessageBoxDefaultButton.Button1);
+                                return;
+                            }
                         }
+
+                        string stxName = wrdName.Replace(".wrd", ".stx");
+                        byte[] spcData = File.ReadAllBytes(textSPCName);
+                        SPC textSPC = new SPC(spcData, textSPCName);
+
+                        Strings = new STX(textSPC.Entries[stxName]).Strings;
                     }
-
-                    string stxName = wrdName.Replace(".wrd", ".stx");
-                    byte[] spcData = File.ReadAllBytes(textSPCName);
-                    SPC textSPC = new SPC(spcData, textSPCName);
-
-                    Strings = new STX(textSPC.Entries[stxName].Contents).Strings;
-                }
-                else
-                {
-                    reader.BaseStream.Seek(stringsEndPointer, SeekOrigin.Begin);
-                    for (ushort i = 0; i < stringCount; ++i)
+                    else
                     {
-                        short stringLen = 0;
-
-                        // The string length is a signed byte, so if it's larger than 0x7F,
-                        // that means the length is actually stored in a signed short,
-                        // since we can't have a negative string length.
-                        // ┐(´∀｀)┌
-                        if ((byte)reader.PeekChar() >= 0x80)
+                        reader.BaseStream.Seek(stringsEndPointer, SeekOrigin.Begin);
+                        for (ushort i = 0; i < stringCount; ++i)
                         {
-                            stringLen = reader.ReadInt16();
-                        }
-                        else
-                        {
-                            stringLen = reader.ReadByte();
-                        }
-                        stringLen += 2; // Null terminator
+                            short stringLen = 0;
 
-                        List<char> stringData = new List<char>(stringLen / 2);
-                        for (int j = 0; j < (stringLen / 2); ++j)
-                        {
-                            char c = Convert.ToChar(reader.ReadUInt16());
-                            stringData.Add(c);
+                            // The string length is a signed byte, so if it's larger than 0x7F,
+                            // that means the length is actually stored in a signed short,
+                            // since we can't have a negative string length.
+                            // ┐(´∀｀)┌
+                            if ((byte)reader.PeekChar() >= 0x80)
+                            {
+                                stringLen = reader.ReadInt16();
+                            }
+                            else
+                            {
+                                stringLen = reader.ReadByte();
+                            }
+                            stringLen += 2; // Null terminator
 
-                            // We can't always trust stringLen apparently, so break if we've hit a null terminator.
-                            if (c == 0)
-                                break;
+                            List<char> stringData = new List<char>(stringLen / 2);
+                            for (int j = 0; j < (stringLen / 2); ++j)
+                            {
+                                char c = Convert.ToChar(reader.ReadUInt16());
+                                stringData.Add(c);
+
+                                // We can't always trust stringLen apparently, so break if we've hit a null terminator.
+                                if (c == 0)
+                                    break;
+                            }
+
+                            string str = new string(stringData.ToArray());
+                            str = str.Replace("\r", "\\r");
+                            str = str.Replace("\n", "\\n");
+                            Strings.Add(str);
                         }
-
-                        string str = new string(stringData.ToArray());
-                        str = str.Replace("\r", "\\r");
-                        str = str.Replace("\n", "\\n");
-                        Strings.Add(str);
                     }
                 }
             }
         }
+
+        public void UpdateEntry() => entry.Contents = ToBytes();
 
         public override byte[] ToBytes()
         {
@@ -285,31 +279,14 @@ namespace FlashbackLight.Formats
         public byte Opcode;
         public ushort[] ArgData;
 
-        public string Name
-        {
-            get { return NAME_LIST[Opcode]; }
-        }
+        public string Name => NAME_LIST[Opcode];
 
-        public byte[] ArgTypes
-        {
-            get { return ARGTYPE_LIST[Opcode]; }
-            
-        }
+        public byte[] ArgTypes => ARGTYPE_LIST[Opcode];
 
-        public bool IsVarLength
-        {
-            get
-            {
-                // TODO: opcode 0x02 and 0x07 might not have variable-length parameters
-                if ((Opcode >= 0x01 && Opcode <= 0x03) || Opcode == 0x07)
-                    return true;
-                else
-                    return false;
-            }
-        }
+        public bool IsVarLength => (Opcode >= 0x01 && Opcode <= 0x03) || Opcode == 0x07;
 
         /// Official command names found in game_resident/command_label.dat
-        public static string[] NAME_LIST =
+        public static readonly string[] NAME_LIST =
         {
             "FLG", "IFF", "WAK", "IFW", "SWI", "CAS", "MPF", "SPW", "MOD", "HUM",
             "CHK", "KTD", "CLR", "RET", "KNM", "CAP", "FIL", "END", "SUB", "RTN",
@@ -321,7 +298,7 @@ namespace FlashbackLight.Formats
             "LOC", "BTN", "ENT", "CED", "LBN", "JMN"
         };
 
-        public static byte[][] ARGTYPE_LIST = new[]
+        public static readonly byte[][] ARGTYPE_LIST = new[]
         {
             new byte[] {0,0}, new byte[] {0,0,0}, new byte[] {0,0,0}, new byte[] {0,0,1}, new byte[] {0}, new byte[] {1}, new byte[] {0,0,0}, new byte[] {}, new byte[] {0,0,0,0}, new byte[] {0},
             new byte[] {0}, new byte[] {0,0}, new byte[] {}, new byte[] {}, new byte[] {0,0,0,0,0}, new byte[] {}, new byte[] {0,0}, new byte[] {}, new byte[] {0,0}, new byte[] {},

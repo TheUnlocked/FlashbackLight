@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FlashbackLight.Utils;
 
 namespace FlashbackLight.Formats
 {
@@ -14,6 +15,7 @@ namespace FlashbackLight.Formats
         public Dictionary<string, SPCEntry> Entries;
 
 
+#pragma warning disable CS0618 // SPC files are allowed to use this constructor.
         public SPC()
         {
             Unk1 = new byte[0x24];
@@ -54,22 +56,17 @@ namespace FlashbackLight.Formats
 
                 entry.CmpFlag = reader.ReadUInt16();
                 entry.UnkFlag = reader.ReadUInt16();
-                int cmpSize = reader.ReadInt32();
-                int decSize = reader.ReadInt32();
+                entry.CmpSize = (int)reader.ReadUInt32();
+                entry.DecSize = (int)reader.ReadUInt32();
                 int nameLen = reader.ReadInt32();
                 reader.BaseStream.Seek(0x10, SeekOrigin.Current);
 
                 int namePadding = (0x10 - (nameLen + 1) % 0x10) % 0x10;
-                int dataPadding = (0x10 - cmpSize % 0x10) % 0x10;
+                int dataPadding = (0x10 - entry.CmpSize % 0x10) % 0x10;
                 entry.Filename = new string(reader.ReadChars(nameLen));
                 reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);
-
-                byte[] data = reader.ReadBytes(cmpSize);
-                if (entry.CmpFlag == 2) // Decompress data if needed
-                {
-                    data = DecompressEntry(data);
-                }
-                entry.Contents = data;
+                
+                entry.Contents = reader.ReadBytes(entry.CmpSize);
                 reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
                 Entries[entry.Filename] = entry;
@@ -79,8 +76,35 @@ namespace FlashbackLight.Formats
         public override byte[] ToBytes()
         {
             List<byte> result = new List<byte>();
-            
-            
+
+            result.AddRange(Encoding.UTF8.GetBytes("CPS."));
+            result.AddRange(Unk1);
+            result.AddRange(BitConverter.GetBytes(Entries.Count));
+            result.AddRange(BitConverter.GetBytes(Unk2));
+            for(int i = 0; i < 0x10; i++) result.Add(0x00);
+            result.AddRange(Encoding.UTF8.GetBytes("Root"));
+            for (int i = 0; i < 0x0C; i++) result.Add(0x00);
+
+            foreach (KeyValuePair<string, SPCEntry> pair in Entries)
+            {
+                SPCEntry entry = pair.Value;
+
+                result.AddRange(BitConverter.GetBytes(entry.CmpFlag));
+                result.AddRange(BitConverter.GetBytes(entry.UnkFlag));
+                result.AddRange(BitConverter.GetBytes(entry.CmpSize));
+                result.AddRange(BitConverter.GetBytes(entry.DecSize));
+                result.AddRange(BitConverter.GetBytes(entry.Filename.Length));
+                for (int i = 0; i < 0x10; i++) result.Add(0x00);
+
+                uint namePadding = (uint)((0x10 - (entry.Filename.Length + 1) % 0x10) % 0x10);
+                uint dataPadding = (uint)((0x10 - entry.CmpSize % 0x10) % 0x10);
+
+                result.AddRange(Encoding.UTF8.GetBytes(entry.Filename));
+                for (int i = 0; i < namePadding + 1; i++) result.Add(0x00);
+
+                result.AddRange(entry.Contents);
+                for (int i = 0; i < dataPadding; i++) result.Add(0x00);
+            }
 
             return result.ToArray();
         }
@@ -94,16 +118,15 @@ namespace FlashbackLight.Formats
         // If we did find a duplicate sequence, and it is adjacent to the readahead area,
         // see how many bytes of that sequence can be repeated until we encounter
         // a non-duplicate byte or reach the end of the readahead area.
-        private byte[] CompressEntry(byte[] decData)
+        public static byte[] CompressEntry(byte[] decData)
         {
-            List<byte> result = new List<byte>();
+            List<byte> result = new List<byte>(decData.Length);
             BinaryReader reader = new BinaryReader(new MemoryStream(decData));
-            List<byte> block = new List<byte>();
-            block.Capacity = 16;
+            List<byte> block = new List<byte>(16);
             long decSize = decData.LongLength;
             
 
-            long flag = 0;
+            byte flag = 0;
             byte flagBit = 0;
 
             // This repeats until we've stored the final compressed block,
@@ -114,8 +137,8 @@ namespace FlashbackLight.Formats
                 // append the flag and compressed block to the compressed data.
                 if (flagBit == 8 || reader.BaseStream.Position >= decSize)
                 {
-                    flag = (flag * 0x0202020202 & 0x010884422010) % 1023;
-                    result.Add((byte)flag);
+                    flag = (byte)((flag * 0x0202020202 & 0x010884422010) % 1023);
+                    result.Add(flag);
                     result.AddRange(block);
 
                     block.Clear();
@@ -130,27 +153,26 @@ namespace FlashbackLight.Formats
 
 
 
-                int lookaheadLen = (int)Math.Min(decSize - reader.BaseStream.Position, 65);
-                byte[] lookahead = reader.ReadBytes(lookaheadLen);
-
-                int searchbackLen = (int)Math.Min(reader.BaseStream.Position, 1024);
                 long oldPos = reader.BaseStream.Position;
 
-                byte[] window = decData.Skip((int)(reader.BaseStream.Position - searchbackLen)).Take(searchbackLen + (lookaheadLen - 1)).ToArray();
+                int lookaheadLen = (int)Math.Min(decSize - reader.BaseStream.Position, 65);
+                byte[] lookahead = reader.ReadBytes(lookaheadLen);  reader.BaseStream.Seek(oldPos, SeekOrigin.Begin);
+                int searchbackLen = (int)Math.Min(reader.BaseStream.Position, 1024);
+                byte[] window = decData.Skip((int)(reader.BaseStream.Position - searchbackLen)).Take(searchbackLen + lookaheadLen - 1).ToArray();
 
                 // Find the largest matching sequence in the window.
                 int s = -1;
                 int l = 1;
-                List<byte> seq = new List<byte>();
-                seq.Capacity = 65;
+                List<byte> seq = new List<byte>(65);
                 seq.Add(lookahead[0]);
+
                 for (; l <= lookaheadLen; ++l)
                 {
-                    int last_s = s;
+                    int lastS = s;
                     if (searchbackLen < 1)
                         break;
 
-                    s = Array.LastIndexOf(window, seq.ToArray(), searchbackLen - 1);
+                    s = window.LastIndexOfSeq(seq.ToArray(), searchbackLen - 1);
 
                     if (s == -1)
                     {
@@ -159,7 +181,7 @@ namespace FlashbackLight.Formats
                             --l;
                             seq.RemoveAt(seq.Count - 1);
                         }
-                        s = last_s;
+                        s = lastS;
                         break;
                     }
 
@@ -170,18 +192,18 @@ namespace FlashbackLight.Formats
                 }
 
                 // if (seq.size() >= 2)
-                if (l >= 2 && s != -1)
+                if (l >= 2 && s != 1)
                 {
                     // We found a duplicate sequence
                     int repeatData = 0;
                     repeatData |= 1024 - searchbackLen + s;
                     repeatData |= (l - 2) << 10;
-                    block.AddRange(BitConverter.GetBytes((ushort)repeatData));
+                    block.Add((byte)repeatData); block.Add((byte)(repeatData >> 8));
                 }
                 else
                 {
                     // We found a new raw byte
-                    flag |= (1 << flagBit);
+                    flag |= (byte)(1 << flagBit);
                     block.AddRange(seq);
                 }
 
@@ -198,7 +220,7 @@ namespace FlashbackLight.Formats
 
         // This is the compression scheme used for
         // individual files in an spc archive
-        private byte[] DecompressEntry(byte[] cmpData)
+        public static byte[] DecompressEntry(byte[] cmpData)
         {
             List<byte> result = new List<byte>();
             MemoryStream reader = new MemoryStream(cmpData);
@@ -240,8 +262,15 @@ namespace FlashbackLight.Formats
 
     class SPCEntry
     {
+        /// <summary>
+        /// 0x01: Uncompressed;
+        /// 0x02: Compressed;
+        /// 0x03: Load from external file (?) 
+        /// </summary>
         public ushort CmpFlag;
         public ushort UnkFlag;
+        public int CmpSize;
+        public int DecSize;
         public string Filename;
         public byte[] Contents;
     }
