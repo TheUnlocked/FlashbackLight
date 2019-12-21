@@ -50,7 +50,10 @@ namespace FlashbackLight
             stxViewer.Visible = false;
 
             if (currentFile.data == null)
+            {
+                exportToolStripMenuItem.Enabled = false;
                 return;
+            }
 
             switch (currentFile.data)
             {
@@ -65,6 +68,7 @@ namespace FlashbackLight
                 default:
                     break;
             }
+            exportToolStripMenuItem.Enabled = true;
         }
 
         private void RefreshWRDCommandList(WRD wrd)
@@ -225,7 +229,7 @@ namespace FlashbackLight
             {
                 AddExtension = true,
                 DefaultExt = ".spc",
-                Filter = "SPC File (*.spc)|*.spc|All Files (*.*)|*.*"
+                Filter = $"{filetypeNames["SPC"]} File (*.spc)|*.spc|All Files (*.*)|*.*"
             };
             dialog.ShowDialog();
             if (dialog.FileName == "")
@@ -265,24 +269,43 @@ namespace FlashbackLight
             }
         }
 
-        private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
+        private void importToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            using var exportForm = new ImportExportSettings(ImportExportSettings.Mode.Import);
+            exportForm.ShowDialog();
         }
 
-        private void replaceMultipleToolStripMenuItem_Click(object sender, EventArgs e)
+        static readonly Dictionary<string, string> filetypeNames = new Dictionary<string, string>
         {
-
-        }
+            { "SPC", "SPC" },
+            { "STX", "STX" },
+            { "WRD", "WRD" },
+            { "TXT", "Text" },
+        };
 
         private void exportToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            string extOptions = string.Join("|", currentFile.data.FileConversions.Keys.Select(x => $"{filetypeNames[x]} File (*.{x.ToLower()})|*.{x.ToLower()}"));
+            using SaveFileDialog dialog = new SaveFileDialog
+            {
+                AddExtension = true,
+                DefaultExt = $".{currentFile.data.FileExtensionDefault.ToLower()}",
+                Filter = $"{extOptions}|All Files (*.*)|*.*"
+            };
+            dialog.ShowDialog();
+            if (dialog.FileName == "")
+                return;
+            Directory.CreateDirectory(Path.GetPathRoot(dialog.FileName));
 
+            var data = currentFile.data.FileConversions.Keys.Contains(Path.GetExtension(dialog.FileName).ToUpper()) ?
+                currentFile.data.FileConversions[Path.GetExtension(dialog.FileName).ToUpper()].toBytes() :
+                currentFile.data.ToBytesDefault();
+            File.WriteAllBytes(dialog.FileName, data);
         }
 
         private void exportAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var exportForm = new ExportSettings();
+            using var exportForm = new ImportExportSettings(ImportExportSettings.Mode.Export);
             exportForm.ShowDialog();
         }
     }
