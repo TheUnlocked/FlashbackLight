@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace FlashbackLight.Formats
 {
-    abstract class V3Format
+    public abstract class V3Format
     {
+        //public delegate byte[] ToBytes();
+
         public SPCEntry entry;
 
         /// <summary>
@@ -36,11 +38,18 @@ namespace FlashbackLight.Formats
             }
         }
 
-        public abstract byte[] ToBytes();
+        public delegate byte[] ToBytes();
+        public delegate void FromBytes(byte[] bytes);
+
+        public abstract Dictionary<string, (ToBytes toBytes, FromBytes fromBytes)> FileConversions { get; }
+
+        public abstract byte[] ToBytesDefault();
+        public abstract void FromBytesDefault(byte[] bytes);
+        public abstract string FileExtensionDefault { get; }
 
         public void UpdateSPCEntry()
         {
-            entry.Contents = ToBytes();
+            entry.Contents = ToBytesDefault();
             entry.CmpSize = entry.Contents.Length;
             entry.DecSize = entry.Contents.Length;
         }

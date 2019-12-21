@@ -15,10 +15,9 @@ namespace FlashbackLight
     public partial class MainForm : Form
     {
         public static string RegionString = "US";
-        private static string currentSPCFilename;
-        private static SPC currentSPC;
-        private static (string filename, V3Format data) currentFile = ("", null);
-
+        public static string currentSPCFilename;
+        public static SPC currentSPC;
+        public static (string filename, V3Format data) currentFile = ("", null);
 
         public MainForm()
         {
@@ -31,40 +30,17 @@ namespace FlashbackLight
             {
                 SaveOpenFile();
             }
-            currentFile = ("", null);
 
             if (currentSPC.Entries.TryGetValue(entryName, out var entry))
             {
-                byte[] data = entry.Contents;
-
-                string ext = Path.GetExtension(entry.Filename).ToUpper();
-
-                switch (ext)
-                {
-                    //case ".DAT":
-
-                    //    break;
-
-                    //case ".SPC":
-                        
-                    //    break;
-
-                    //case ".SRD":
-
-                    //    break;
-
-                    case ".STX":
-                        currentFile = (entryName, new STX(entry));
-                        break;
-
-                    case ".WRD":
-                        currentFile = (entryName, new WRD(entry, currentSPCFilename, entryName));
-                        break;
-
-                    default:
-                        break;
-                }
+                V3Format loaded = entry.Load();
+                currentFile = (entryName, loaded);
             }
+            else
+            {
+                currentFile = ("", null);
+            }
+
             DisplayCurrentFile();
         }
 
@@ -147,7 +123,7 @@ namespace FlashbackLight
 
         private void RefreshSTXStringList(STX stx)
         {
-            currentSTXStringList.DataSource = new BindingSource()
+            currentSTXStringList.DataSource = new BindingSource
             {
                 DataSource = new Utils.DataGridViewList<string>(stx.Strings)
             };
@@ -167,7 +143,10 @@ namespace FlashbackLight
 
         private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog fd = new OpenFileDialog();
+            using OpenFileDialog fd = new OpenFileDialog
+            {
+                Filter = "SPC File (*.spc)|*.spc|All Files (*.*)|*.*"
+            };
             fd.ShowDialog();
             string filepath = fd.FileName;
             if (filepath == "")
@@ -189,7 +168,8 @@ namespace FlashbackLight
                 {
                     byte[] filedata;
                     filedata = File.ReadAllBytes(filepath);
-                    currentSPC = new SPC(filedata, filepath);
+                    currentSPC = new SPC();
+                    currentSPC.FromBytesDefault(filedata);
                     currentSPCFilename = filepath;
                 }
                 catch (Exception error)
@@ -208,6 +188,7 @@ namespace FlashbackLight
             }
             saveToolStripMenuItem.Enabled = true;
             saveAsToolStripMenuItem.Enabled = true;
+            importExportToolStripMenuItem.Enabled = true;
         }
 
         private void CurrentSPCEntryList_DoubleClick(object sender, EventArgs e)
@@ -235,7 +216,7 @@ namespace FlashbackLight
                 return;
             }
             SaveOpenFile();
-            File.WriteAllBytes(currentSPCFilename, currentSPC.ToBytes());
+            File.WriteAllBytes(currentSPCFilename, currentSPC.ToBytesDefault());
         }
 
         private void SaveAs(object sender, EventArgs e)
@@ -243,14 +224,15 @@ namespace FlashbackLight
             SaveFileDialog dialog = new SaveFileDialog
             {
                 AddExtension = true,
-                DefaultExt = ".spc"
+                DefaultExt = ".spc",
+                Filter = "SPC File (*.spc)|*.spc|All Files (*.*)|*.*"
             };
             dialog.ShowDialog();
             if (dialog.FileName == "")
                 return;
             SaveOpenFile();
             Directory.CreateDirectory(Path.GetPathRoot(dialog.FileName));
-            File.WriteAllBytes(dialog.FileName, currentSPC.ToBytes());
+            File.WriteAllBytes(dialog.FileName, currentSPC.ToBytesDefault());
             currentSPCFilename = dialog.FileName;
         }
 
@@ -281,6 +263,27 @@ namespace FlashbackLight
                 currentFile.data.UpdateSPCEntry();
                 currentFile.data.Recompress();
             }
+        }
+
+        private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void replaceMultipleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void exportAllToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var exportForm = new ExportSettings();
+            exportForm.ShowDialog();
         }
     }
 }

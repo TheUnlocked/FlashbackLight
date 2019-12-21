@@ -21,12 +21,11 @@ namespace FlashbackLight.Formats
         {
             this.spcName = spcName;
             this.wrdName = wrdName;
-            Update();
         }
 
-        public void Update()
+        public override void FromBytesDefault(byte[] bytes)
         {
-            using (BinaryReader reader = new BinaryReader(new MemoryStream(entry.Contents), Encoding.UTF8))
+            using (BinaryReader reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8))
             {
 
                 ushort stringCount = reader.ReadUInt16();
@@ -128,7 +127,8 @@ namespace FlashbackLight.Formats
 
                         string stxName = wrdName.Replace(".wrd", ".stx");
                         byte[] spcData = File.ReadAllBytes(textSPCName);
-                        SPC textSPC = new SPC(spcData, textSPCName);
+                        SPC textSPC = new SPC();
+                        textSPC.FromBytesDefault(spcData);
 
                         Strings = new STX(textSPC.Entries[stxName]).Strings;
                     }
@@ -174,9 +174,9 @@ namespace FlashbackLight.Formats
             }
         }
 
-        public void UpdateEntry() => entry.Contents = ToBytes();
+        public void UpdateEntry() => entry.Contents = ToBytesDefault();
 
-        public override byte[] ToBytes()
+        public override byte[] ToBytesDefault()
         {
 
             List<byte> result = new List<byte>();
@@ -272,6 +272,12 @@ namespace FlashbackLight.Formats
 
             return result.ToArray();
         }
+
+        public override Dictionary<string, (ToBytes, FromBytes)> FileConversions => new Dictionary<string, (ToBytes, FromBytes)>
+        {
+            { FileExtensionDefault, (ToBytesDefault, FromBytesDefault) },
+        };
+        public override string FileExtensionDefault => "WRD";
     }
 
     class WRDCmd

@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlashbackLight.Utils;
+using static FlashbackLight.Formats.V3Format;
 
 namespace FlashbackLight.Formats
 {
-    class SPC : V3Format
+    public class SPC : V3Format
     {
         public byte[] Unk1;
         public uint Unk2;
         public Dictionary<string, SPCEntry> Entries;
-
 
 #pragma warning disable CS0618 // SPC files are allowed to use this constructor.
         public SPC()
@@ -23,9 +23,9 @@ namespace FlashbackLight.Formats
             Entries = new Dictionary<string, SPCEntry>();
         }
 
-        public SPC(byte[] bytes, string spcName)
+        public override void FromBytesDefault(byte[] bytes)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8);
+            using BinaryReader reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8);
 
             string spcMagic = new string(reader.ReadChars(4));
             if (spcMagic == "$CMP")
@@ -65,7 +65,7 @@ namespace FlashbackLight.Formats
                 int dataPadding = (0x10 - entry.CmpSize % 0x10) % 0x10;
                 entry.Filename = new string(reader.ReadChars(nameLen));
                 reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);
-                
+
                 entry.Contents = reader.ReadBytes(entry.CmpSize);
                 reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
@@ -73,7 +73,7 @@ namespace FlashbackLight.Formats
             }
         }
 
-        public override byte[] ToBytes()
+        public override byte[] ToBytesDefault()
         {
             List<byte> result = new List<byte>();
 
@@ -258,9 +258,15 @@ namespace FlashbackLight.Formats
 
             return result.ToArray();
         }
+
+        public override Dictionary<string, (ToBytes, FromBytes)> FileConversions => new Dictionary<string, (ToBytes, FromBytes)>
+        {
+            { FileExtensionDefault, (ToBytesDefault, FromBytesDefault) },
+        };
+        public override string FileExtensionDefault => "SPC";
     }
 
-    class SPCEntry
+    public class SPCEntry
     {
         /// <summary>
         /// 0x01: Uncompressed;
@@ -273,5 +279,20 @@ namespace FlashbackLight.Formats
         public int DecSize;
         public string Filename;
         public byte[] Contents;
+
+        public V3Format Load()
+        {
+            V3Format loaded = Path.GetExtension(Filename).ToUpper() switch
+            {
+                //".DAT" => ,
+                //".SPC" => ,
+                //".SRD" => ,
+                ".STX" => new STX(this),
+                ".WRD" => new WRD(this, MainForm.currentSPCFilename, Filename),
+                _ => null,
+            };
+            loaded.FromBytesDefault(Contents);
+            return loaded;
+        }
     }
 }

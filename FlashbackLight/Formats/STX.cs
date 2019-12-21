@@ -14,41 +14,17 @@ namespace FlashbackLight.Formats
 
         public STX(SPCEntry entry) : base(entry)
         {
-            using (var reader = new BinaryReader(new MemoryStream(entry.Contents), Encoding.UTF8))
-            {
-                if (new string(reader.ReadChars(4)) != "STXT")
-                    throw new InvalidDataException("Error parsing STX file: Invalid magic number.");
-                lang = new string(reader.ReadChars(4));
-            }
 
-            using (var reader = new BinaryReader(new MemoryStream(entry.Contents), Encoding.Unicode))
-            {
-                reader.BaseStream.Seek(8, SeekOrigin.Begin);
-                uint unk1 = reader.ReadUInt32();    // Table count?
-                uint tableOffset = reader.ReadUInt32();
-                uint unk2 = reader.ReadUInt32();
-                uint tableLen = reader.ReadUInt32();
-
-                Strings = new List<string>();
-                for (uint s = 0; s < tableLen; s++)
-                {
-                    reader.BaseStream.Seek(tableOffset + (8 * s), SeekOrigin.Begin);
-                    uint stringIndex = reader.ReadUInt32();
-                    uint stringOffset = reader.ReadUInt32();
-
-                    reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                    List<char> charList = new List<char>();
-                    while (reader.PeekChar() != 0x00)
-                    {
-                        charList.Add(reader.ReadChar());
-                    }
-                    string finalString = new string(charList.ToArray());
-                    Strings.Add(finalString);
-                }
-            }
         }
 
-        public override byte[] ToBytes()
+        public override Dictionary<string, (ToBytes, FromBytes)> FileConversions => new Dictionary<string, (ToBytes, FromBytes)>
+        {
+            { FileExtensionDefault, (ToBytesDefault, FromBytesDefault) },
+            { "TXT", (ToBytesTxt, FromBytesTxt) }
+        };
+        public override string FileExtensionDefault => "STX";
+
+        public override byte[] ToBytesDefault()
         {
             List<byte> result = new List<byte>();
             uint tableOffset = 0x20;
@@ -99,6 +75,62 @@ namespace FlashbackLight.Formats
             }
 
             return result.ToArray();
+        }
+
+        public override void FromBytesDefault(byte[] bytes)
+        {
+            using (var reader = new BinaryReader(new MemoryStream(bytes), Encoding.UTF8))
+            {
+                if (new string(reader.ReadChars(4)) != "STXT")
+                    throw new InvalidDataException("Error parsing STX file: Invalid magic number.");
+                lang = new string(reader.ReadChars(4));
+            }
+
+            using (var reader = new BinaryReader(new MemoryStream(entry.Contents), Encoding.Unicode))
+            {
+                reader.BaseStream.Seek(8, SeekOrigin.Begin);
+                uint unk1 = reader.ReadUInt32();    // Table count?
+                uint tableOffset = reader.ReadUInt32();
+                uint unk2 = reader.ReadUInt32();
+                uint tableLen = reader.ReadUInt32();
+
+                Strings = new List<string>();
+                for (uint s = 0; s < tableLen; s++)
+                {
+                    reader.BaseStream.Seek(tableOffset + (8 * s), SeekOrigin.Begin);
+                    uint stringIndex = reader.ReadUInt32();
+                    uint stringOffset = reader.ReadUInt32();
+
+                    reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
+                    List<char> charList = new List<char>();
+                    while (reader.PeekChar() != 0x00)
+                    {
+                        charList.Add(reader.ReadChar());
+                    }
+                    string finalString = new string(charList.ToArray());
+                    Strings.Add(finalString);
+                }
+            }
+        }
+
+        byte[] ToBytesTxt()
+        {
+            StringBuilder sb = new StringBuilder()
+                .Append(lang)
+                .Append('\0')
+                .Append(string.Join("\0", Strings))
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\r")
+                .Replace('\0', '\n');
+
+            return Encoding.UTF8.GetBytes(sb.ToString());
+        }
+
+        void FromBytesTxt(byte[] bytes)
+        {
+            var strs = Encoding.UTF8.GetString(bytes).Split(new string[] { "\n", "\r\n" }, StringSplitOptions.None);
+            lang = strs[0];
+            Strings = strs.Skip(1).ToList();
         }
     }
 }
