@@ -58,8 +58,51 @@ namespace FlashbackLight
 
         private bool ImportFiles()
         {
-            MessageBox.Show("This is not currently implemented :(");
-            return false;
+            using CommonOpenFileDialog dialog = new CommonOpenFileDialog
+            {
+                Multiselect = true,
+            };
+            var result = dialog.ShowDialog();
+            if (result != CommonFileDialogResult.Ok)
+                return false;
+
+            foreach (var filename in dialog.FileNames)
+            {
+                var fileExt = Path.GetExtension(filename).Substring(1).ToUpper();
+                string sourceExt;
+                if (fileExt == wrdFiletype.Text)
+                    sourceExt = "wrd";
+                else if (fileExt == stxFiletype.Text)
+                    sourceExt = "stx";
+                else if (new[] { "stx", "wrd" }.Contains(fileExt))
+                    sourceExt = fileExt.ToLower();
+                else
+                    continue;
+
+                var sourceFilename = Path.GetFileName(Path.ChangeExtension(filename, sourceExt));
+
+                if (MainForm.currentSPC.Entries.TryGetValue(sourceFilename, out var entry)) {
+                    V3Format data = sourceExt switch
+                    {
+                        "wrd" => new WRD(entry, MainForm.currentSPCFilename, sourceFilename),
+                        "stx" => new STX(entry),
+                        _ => null
+                    };
+                    if (data != null)
+                    {
+                        data.FileConversions[fileExt.ToUpper()].fromBytes(File.ReadAllBytes(filename));
+                        data.UpdateSPCEntry();
+                        data.Recompress();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show($"Importing new files to an SPC is not currently supported.");
+                    continue;
+                }
+            }
+
+            return true;
         }
 
         private bool ExportFiles()

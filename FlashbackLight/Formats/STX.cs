@@ -130,7 +130,12 @@ namespace FlashbackLight.Formats
         {
             var strs = Encoding.UTF8.GetString(bytes).Split(new string[] { "\n", "\r\n" }, StringSplitOptions.None);
             lang = strs[0];
-            Strings = strs.Skip(1).ToList();
+            Strings = strs
+                .Skip(1)
+                .Select(s => s
+                    .Replace("\\n", "\n")
+                    .Replace("\\r", "\r"))
+                .ToList();
         }
     }
 }
