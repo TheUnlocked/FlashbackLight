@@ -24,7 +24,7 @@ namespace FlashbackLight
             InitializeComponent();
         }
 
-        private void OpenDataEntry(string entryName)
+        public void OpenDataEntry(string entryName)
         {
             if (currentFile.data != null)
             {
@@ -266,12 +266,13 @@ namespace FlashbackLight
             {
                 currentFile.data.UpdateSPCEntry();
                 currentFile.data.Recompress();
+                currentFile = ("", null);
             }
         }
 
         private void importToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using var exportForm = new ImportExportSettings(ImportExportSettings.Mode.Import);
+            using var exportForm = new ImportExportSettings(this, ImportExportSettings.Mode.Import);
             exportForm.ShowDialog();
         }
 
@@ -305,7 +306,7 @@ namespace FlashbackLight
 
         private void exportAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using var exportForm = new ImportExportSettings(ImportExportSettings.Mode.Export);
+            using var exportForm = new ImportExportSettings(this, ImportExportSettings.Mode.Export);
             exportForm.ShowDialog();
         }
     }

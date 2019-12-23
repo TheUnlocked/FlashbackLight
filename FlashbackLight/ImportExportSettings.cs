@@ -22,10 +22,12 @@ namespace FlashbackLight
         }
 
         private Mode mode;
+        private MainForm parent;
 
-        public ImportExportSettings(Mode mode)
+        public ImportExportSettings(MainForm mainForm, Mode mode)
         {
             InitializeComponent();
+            parent = mainForm;
             this.mode = mode;
             wrdFiletype.SelectedIndex = 0;
             stxFiletype.SelectedIndex = 0;
@@ -80,25 +82,36 @@ namespace FlashbackLight
                     continue;
 
                 var sourceFilename = Path.GetFileName(Path.ChangeExtension(filename, sourceExt));
-
-                if (MainForm.currentSPC.Entries.TryGetValue(sourceFilename, out var entry)) {
-                    V3Format data = sourceExt switch
-                    {
-                        "wrd" => new WRD(entry, MainForm.currentSPCFilename, sourceFilename),
-                        "stx" => new STX(entry),
-                        _ => null
-                    };
-                    if (data != null)
-                    {
-                        data.FileConversions[fileExt.ToUpper()].fromBytes(File.ReadAllBytes(filename));
-                        data.UpdateSPCEntry();
-                        data.Recompress();
-                    }
+                if (MainForm.currentFile.filename == sourceFilename)
+                {
+                    MainForm.currentFile.data.FileConversions[fileExt.ToUpper()].fromBytes(File.ReadAllBytes(filename));
+                    MainForm.currentFile.data.UpdateSPCEntry();
+                    MainForm.currentFile.data.Recompress();
+                    MainForm.currentFile = ("", null);
+                    parent.OpenDataEntry(sourceFilename);
                 }
                 else
                 {
-                    MessageBox.Show($"Importing new files to an SPC is not currently supported.");
-                    continue;
+                    if (MainForm.currentSPC.Entries.TryGetValue(sourceFilename, out var entry))
+                    {
+                        V3Format data = sourceExt switch
+                        {
+                            "wrd" => new WRD(entry, MainForm.currentSPCFilename, sourceFilename),
+                            "stx" => new STX(entry),
+                            _ => null
+                        };
+                        if (data != null)
+                        {
+                            data.FileConversions[fileExt.ToUpper()].fromBytes(File.ReadAllBytes(filename));
+                            data.UpdateSPCEntry();
+                            data.Recompress();
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Importing new files to an SPC is not currently supported.");
+                        continue;
+                    }
                 }
             }
 
